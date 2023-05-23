@@ -14,60 +14,86 @@ export class Ball {
         this.gravity = -300;
         this.bounciness = .97;
 
+        this.travel_segment_start = vec3(0, 0, 0);
+        this.travel_segment_end = vec3(0, 0, 0);
+
+        this.dt = 0;
+
         this.PhysicsCalculations = new PhysicsCalculations();
     }
 
     update_object(context, program_state) {
-        const dt = program_state.animation_delta_time / 1000;
-        this.velocity[1] = this.velocity[1] + this.gravity * dt;
-        this.update_position(dt);
+        this.dt = program_state.animation_delta_time / 1000;
+        this.velocity[1] = this.velocity[1] + this.gravity * this.dt;
+
+        this.update_position();
+
         this.render(context, program_state);
     }
 
-    update_position(dt) {
-        this.position = this.position.plus(this.velocity.times(dt));
+    update_position() {
+        this.travel_segment_start = this.position;
+        this.position = this.position.plus(this.velocity.times(this.dt));
+        this.travel_segment_start = this.position;
 
         this.handle_boundary_collision(8, 6);
     }
 
-    collide(normal, tangent, bounciness) {
-        let normal_component =
-            this.PhysicsCalculations.dot_product(this.velocity, normal)
-            / this.PhysicsCalculations.sqr_magnitude(normal) * normal;
+    collide(normal, bounciness, collision_point) {
 
-        let tangent_component =
-            this.PhysicsCalculations.dot_product(this.velocity, tangent)
-            / this.PhysicsCalculations.sqr_magnitude(tangent) * tangent;
+        let travel_proportion =
+            this.PhysicsCalculations.sqr_magnitude(vec3(this.travel_segment_start[0] - collision_point[0], this.travel_segment_start[1] - collision_point[1], 0))
+            / this.PhysicsCalculations.sqr_magnitude(vec3(this.travel_segment_start[0] - this.travel_segment_end[0], this.travel_segment_start[1] - this.travel_segment_end[1], 0));
 
-        //log the normal and tangent components
-        console.log("normal component: " + normal_component + " tangent component: " + tangent_component);
+        this.dt = this.dt * (1 - travel_proportion);
 
-        this.velocity = normal_component * -bounciness + tangent_component;
+        this.update_bounce_velocity(normal, bounciness);
+        this.position = collision_point;
+    }
+
+    update_bounce_velocity(normal, bounciness) {
+
+        let tangent = vec3(normal[1], -normal[0], 0)
+
+        let normal_component_magnitude = this.PhysicsCalculations.dot_product(this.velocity, normal)
+            / this.PhysicsCalculations.sqr_magnitude(normal);
+
+        let normal_component = vec3(normal_component_magnitude * normal[0], normal_component_magnitude * normal[1], 0);
+
+        let tangent_component_mag = this.PhysicsCalculations.dot_product(this.velocity, tangent)
+            / this.PhysicsCalculations.sqr_magnitude(tangent);
+
+        let tangent_component = vec3(tangent_component_mag * tangent[0], tangent_component_mag * tangent[1], 0);
+
+        console.log("normal_component: " + normal_component);
+        console.log("tangent_component: " + tangent_component);
+
+        this.velocity = vec3(normal_component[0] * -bounciness * this.bounciness + tangent_component[0], normal_component[1] * -bounciness * this.bounciness + tangent_component[1], 0);
+
+        //TODO: CALL RECURSIVELY UNTIL NO MORE COLLISIONS
     }
 
     handle_boundary_collision(width, height) {
-        if (this.position[0] > width)
+
+        //wall_points are denoted in pairs of points that make up a line segment
+        const wall_points = [
+            vec3(-999, 999 * .7, 0), vec3(0, -height, 0),
+            vec3(0, -height, 0), vec3(999, 999 * .7, 0),
+
+            vec3(-999, height, 0), vec3(999, height, 0),
+            vec3(-width, -999, 0), vec3(-width, 999, 0),
+            vec3(width, -999, 0), vec3(width, 999, 0)
+        ];
+
+        let collision_point = null;
+
+        for (let i = 0; i < wall_points.length; i += 2)
         {
-            this.collide(vec3(-1, 0, 0), vec3(0,1,0), 1);
-        }
+            collision_point = this.PhysicsCalculations.findIntersectionPoint(this.travel_segment_start, this.travel_segment_end, wall_points[i], wall_points[i + 1]);
 
-        if (this.position[0] < -width) {
-            this.collide(vec3(1, 0, 0), vec3(0,1,0),1);
-        }
-
-        if (this.position[1] < -height) {
-            this.collide(vec3(0, 1, 0),vec3(1,0,0),1);
-
-            if (Math.abs(this.velocity[1]) < 10)
-            {
-                this.velocity[1] = 0;
-                this.position[1] = -height;
+            if (collision_point !== null){
+                this.collide(this.PhysicsCalculations.normal_of_line_segment(wall_points[i], wall_points[i + 1]),1, collision_point);
             }
-        }
-
-        if (this.position[1] > height) {
-            this.position[1] = height - (this.position[1] - height);
-            this.velocity[1] *= -this.bounciness;
         }
     }
 

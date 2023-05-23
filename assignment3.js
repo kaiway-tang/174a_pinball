@@ -1,6 +1,6 @@
 import {defs, tiny} from './examples/common.js';
 import {Ball} from './new-scripts/ball.js';
-import {Obstacle, Cylindrical} from './new-scripts/obstacles.js';
+import {Obstacle, Cylindrical, Rectangular} from './new-scripts/obstacles.js';
 import {PhysicsCalculations} from "./new-scripts/physics-calculations.js";
 
 const {
@@ -18,6 +18,8 @@ export class Assignment3 extends Scene {
             torus2: new defs.Torus(3, 15),
             sphere: new defs.Subdivision_Sphere(4),
             circle: new defs.Regular_2D_Polygon(1, 15),
+            cube: new defs.Cube(),
+            square: new defs.Square(),
             // TODO:  Fill in as many additional shape instances as needed in this key/value table.
             //        (Requirement 1)
         };
@@ -25,14 +27,12 @@ export class Assignment3 extends Scene {
         // *** Materials
         this.materials = {
             test: new Material(new defs.Phong_Shader(),
-                {ambient: .4, diffusivity: .6, color: hex_color("#ffffff")}),
-            test2: new Material(new Gouraud_Shader(),
-                {ambient: .4, diffusivity: .6, color: hex_color("#992828")}),
+                {ambient: .4, diffusivity: .5, specularity: .9, color: hex_color("#b3abff")}),
             ring: new Material(new Ring_Shader()),
 
             // TODO:  Fill in as many additional material objects as needed in this key/value table.
             //        (Requirement 4)
-            ball: new Material(new Gouraud_Shader(),
+            ball: new Material(new defs.Phong_Shader(),
                 {ambient: 0.4, diffusivity: 1, specularity: 1, color: hex_color("#888888")}),
             circular_bouncer: new Material(new Gouraud_Shader(),
                 {ambient: 0.4, diffusivity: 1, specularity: .5, color: hex_color("#ff0000")}),
@@ -45,6 +45,9 @@ export class Assignment3 extends Scene {
             vec3(0, 6, 0), vec3(this.get_random_float(-20,20), this.get_random_float(-6,6), 0));
 
         this.circular_bouncer = new Cylindrical(this.shapes.torus, this.materials.circular_bouncer, vec3(0, 0, 0), 1);
+
+        this.left_floor = new Rectangular(this.shapes.cube, this.materials.test, vec3(-2, 2, 0), 1, 1, 1, 0);
+        this.right_floor = new Rectangular(this.shapes.cube, this.materials.test, vec3(2, -2, 0), 1, 1, 1, 45);
     }
 
     make_control_panel() {
@@ -93,14 +96,10 @@ export class Assignment3 extends Scene {
 
         //BKMK
         this.Ball.update_object(context, program_state);
-        this.circular_bouncer.render(context, program_state, model_transform);
+        //this.circular_bouncer.render(context, program_state, model_transform);
 
-        let line_1_start = vec3(0,0,0);
-        let line_1_end = vec3(1,2,0);
-        let line_2_start = vec3(0,2,0);
-        let line_2_end = vec3(1,0,0);
-        console.log("intersection: " + this.PhysicsCalculations.findIntersectionPoint(line_1_start, line_1_end, line_2_start, line_2_end));
-        //findIntersectionPoint(line_1_start, line_1_end, line_2_start, line_2_end);
+        this.left_floor.render(context, program_state);
+        //this.right_floor.render(context, program_state);
     }
 }
 

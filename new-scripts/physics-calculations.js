@@ -11,7 +11,6 @@ export class PhysicsCalculations {
         const y1 = line_1_begin[1];
         const x2 = line_1_end[0];
         const y2 = line_1_end[1];
-        console.log("line_2_begin:" + line_2_begin);
         const x3 = line_2_begin[0];
         const y3 = line_2_begin[1];
         const x4 = line_2_end[0];
@@ -20,7 +19,7 @@ export class PhysicsCalculations {
         const denominator = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
 
         if (denominator === 0) {
-            return null; // Segments are parallel or coincident, no intersection
+            return null;
         }
 
         const numerator1 = (x1 * y2 - y1 * x2) * (x3 - x4) - (x1 - x2) * (x3 * y4 - y3 * x4);
@@ -45,6 +44,10 @@ export class PhysicsCalculations {
         return vec3(intersectionX, intersectionY, 0);
     }
 
+    find_circle_intersection_point(line_1_begin, line_1_end, circle_center, circle_radius) {
+
+    }
+
     calculateBounceVector(directionVector, normalVector) {
         // Make sure incidentVector and normalVector are normalized (unit vectors)
         const direction = this.normalizeVector(directionVector);
@@ -67,6 +70,10 @@ export class PhysicsCalculations {
 
     sqr_magnitude(vector) {
         return vector[0] * vector[0] + vector[1] * vector[1];
+    }
+
+    normal_of_line_segment(start, end) {
+        return vec3(end[1] - start[1], start[0] - end[0], 0);
     }
 
     dot_product(vector1, vector2) {
